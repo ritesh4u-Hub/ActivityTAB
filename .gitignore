@@ -43,3 +43,9 @@ yarn-error.log*
 
 # OS metadata
 .DS_Store
+
+/windows/dist/
+/windows/src/App.tsx
+/windows/src/client.tsx
+/windows/src/route.ts
+/windows/test-data/
