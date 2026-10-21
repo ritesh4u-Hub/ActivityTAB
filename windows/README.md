@@ -56,6 +56,8 @@ Install the Windows URL as the PWA; a PWA installed from the former `chatgpt.sit
 
 On Android, use Chrome's Install app option. On iPhone/iPad, use Safari → Share → Add to Home Screen, then open the installed app. In Settings, enable notifications and use Send test. iOS/iPadOS 16.4 or later is required for Web Push. A permission grant and actual alert receipt must be checked on a physical phone.
 
+Document download buttons fetch the file inside the signed-in app before saving a temporary blob, avoiding Android handoffs of a protected API URL to a different browser context. Authentication errors are shown in the app instead of downloaded as documents. Temporary object URLs are released after one minute.
+
 The service worker caches only the offline page and icon. Tasks, documents, and session responses use network requests and are not cached. Cache cleanup and notification window selection are scoped to ActivityTAB, preserving other applications on this domain.
 
 ## Backup and recovery
