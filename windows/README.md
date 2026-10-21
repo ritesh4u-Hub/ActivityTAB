@@ -46,9 +46,9 @@ A successful process start alone does not verify IIS publication. Verify public 
 
 On first startup, a random setup token is created in `data\first-admin-setup.txt`. The installer opens the administrator setup page on the server. The owner must enter and submit their own name, email, and password. Setup stops accepting requests as soon as the first credential exists; no default password is installed.
 
-Add employees in Team, then select **Manage sign-in access** to create a personal setup link. Links are random, stored as SHA-256 digests, expire in 24 hours, and work once. Share a link privately only with its intended employee. A new reset link revokes existing sessions. Employee deactivation is enforced on every authenticated request.
+Add employees in Team, then select **Manage sign-in access** to create a personal setup link. Links are random, stored as SHA-256 digests, expire in 24 hours, and work once. Share a link privately only with its intended employee. A new reset link revokes existing sessions. Employee deactivation is enforced on every authenticated request. Administrators can use Team → Edit to change names, emails, departments, and roles while preserving employee IDs, assignments, documents, and active status. Duplicate emails and self-demotion are rejected.
 
-Passwords use salted scrypt. Sessions use random opaque cookies whose digests are stored in SQLite. Cookies are HttpOnly, Secure, SameSite=Strict, and scoped to `/ActivityTAB/`. **Keep me signed in** selects a persistent 30-day session; unchecked sessions expire after 12 hours and use a browser-session cookie. Signing out revokes that session server-side.
+Passwords use salted scrypt. Sessions use random opaque cookies whose digests are stored in SQLite. Cookies are HttpOnly, Secure, SameSite=Strict, and scoped to `/ActivityTAB/`. **Keep me signed in** selects a persistent 30-day session; unchecked sessions expire after 12 hours and use a browser-session cookie. Signing out revokes that session server-side. The sign-in page performs a same-origin session check so launcher navigations that omit a Strict cookie can resume an existing saved session. Restored sign-in pages also recheck on pageshow.
 
 ## PWA and mobile alerts
 
