@@ -7,6 +7,7 @@ async function handle(req:Request){try{
 const path=new URL(req.url).pathname.replace(/^\/api\//,'');const method=req.method;
 if(method!=='GET'){const origin=req.headers.get('origin');if(origin&&origin!==new URL(req.url).origin)fail('Invalid request origin',403)}
 // This endpoint is behind the owner-private Sites access boundary; service access is supplied by Sites.
+if(path==='maintenance'&&method==='GET')return json({lastRun:await setting('lastTick'),scheduler:await setting('scheduler',{enabled:false})});
 if(path==='maintenance'&&method==='POST'){const b:any=await req.json().catch(()=>({}));if(b.schedulerEnabled===true)await saveSetting('scheduler',{enabled:true,cadence:'hourly',verifiedAt:now()});return json(await maintenance())}
 const uid=req.headers.get('oai-authenticated-user-id');const email=req.headers.get('oai-authenticated-user-email')?.trim().toLowerCase();if(!uid||!email)fail('Please sign in to use ActivityTAB.',401);
 let owner=await setting('owner');if(!owner){await run('INSERT OR IGNORE INTO settings(key,value) VALUES(?,?)','owner',JSON.stringify(email));owner=await setting('owner')}
