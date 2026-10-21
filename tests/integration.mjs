@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+const base=process.env.TEST_BASE||'http://127.0.0.1:8787';
+let checks=0;const stamp=Date.now();const admin='seedy@sites.test';
+async function call(path,method='GET',body,email=admin,expected=200){const r=await fetch(base+'/api/'+path,{method,headers:{...(email?{'oai-authenticated-user-id':'test-user-'+email,'oai-authenticated-user-email':email}:{}),...(body&&! (body instanceof FormData)?{'Content-Type':'application/json'}:{})},body:body?body instanceof FormData?body:JSON.stringify(body):undefined});const b=await r.json();assert.equal(r.status,expected,`${method} ${path}: ${JSON.stringify(b)}`);checks++;return b}
+const state=await call('state');await call('state','GET',undefined,null,401);
+const alice=`alice${stamp}@example.test`,bob=`bob${stamp}@example.test`;
+for(const [name,email] of [['Alice Sharma',alice],['Bob Singh',bob]])await call('members','POST',{name,email,department:'Operations',role:'executive'});
+const members=(await call('state')).members;const a=members.find(m=>m.email===alice),b=members.find(m=>m.email===bob);
+await call('members','POST',{name:'Blocked',email:'invalid',role:'executive'},admin,400);
+await call('tasks','POST',{},alice,403);await call('settings','POST',{},alice,403);
+const future=new Date(Date.now()+86400000).toISOString();
+const make=async(assignee,extra={})=>(await call('tasks','POST',{title:'Integration: operations report',description:'Upload the report for review.',assignee,due:future,priority:'high',frequency:'once',required:true,approval:true,...extra})).id;
+const tid=await make(a.id);await make(b.id);
+assert.equal((await call('state','GET',undefined,alice)).tasks.length,1);checks++;
+await call('tasks/'+tid,'GET',undefined,bob,403);
+await call('tasks/'+tid,'PATCH',{action:'acknowledge'},alice);await call('tasks/'+tid,'PATCH',{action:'start'},alice);
+await call('tasks/'+tid,'PATCH',{action:'submit'},alice,400);
+async function upload(name='report.csv'){const fd=new FormData();fd.append('file',new Blob(['item,value\ncompleted,42\n'],{type:'text/csv'}),name);return fd}
+await call('tasks/'+tid+'/documents','POST',await upload('blocked.html'),alice,400);
+await call('tasks/'+tid+'/documents','POST',await upload(),bob,403);
+await call('tasks/'+tid+'/documents','POST',await upload(),alice);
+const d=(await call('state','GET',undefined,alice)).documents.find(d=>d.task===tid);
+let downloaded=await fetch(base+'/api/documents/'+d.id,{headers:{'oai-authenticated-user-id':'alice','oai-authenticated-user-email':alice}});assert.equal(await downloaded.text(),'item,value\ncompleted,42\n');checks++;
+await call('documents/'+d.id,'GET',undefined,bob,403);
+await call('tasks/'+tid,'PATCH',{action:'submit',note:'Report attached'},alice);
+await call('tasks/'+tid,'PATCH',{action:'approve'},alice,403);
+await call('tasks/'+tid,'PATCH',{action:'return',note:'Please include branch totals',due:future});
+await call('tasks/'+tid,'PATCH',{action:'submit'},alice,400);
+await call('tasks/'+tid+'/documents','POST',await upload('corrected.csv'),alice);
+await call('tasks/'+tid,'PATCH',{action:'submit'},alice);await call('tasks/'+tid,'PATCH',{action:'approve',note:'Verified'});
+assert.equal((await call('state')).tasks.find(t=>t.id===tid).status,'completed');checks++;
+await call('tasks/'+tid+'/documents','POST',await upload(),alice,400);
+const root=await make(a.id,{title:'Integration: daily checklist',frequency:'daily',due:new Date(Date.now()-3600000).toISOString(),required:false});
+await call('maintenance','POST',{});const first=await call('state');assert.equal(first.tasks.filter(t=>t.parent===root).length,1);checks++;
+const count=first.notifications.length;await call('maintenance','POST',{});assert.equal((await call('state')).notifications.length,count);checks++;
+await call('tasks/'+root,'PATCH',{action:'cancel'});assert.ok((await call('state')).tasks.filter(t=>t.id===root||t.parent===root).every(t=>t.status==='cancelled'&&t.frequency==='once'));checks++;
+await call('push/subscribe','POST',{endpoint:'https://example.test/push',keys:{auth:'x',p256dh:'y'}},alice,400);
+await call('push/test','POST',{},alice,400);
+await call('members/'+b.id,'PATCH',{active:false});await call('state','GET',undefined,bob,403);
+assert.ok((await call('tasks/'+tid)).events.length>=6);checks++;
+for(const asset of ['/manifest.webmanifest','/sw.js','/icon-192.png','/icon-512.png','/offline.html']){assert.equal((await fetch(base+asset)).status,200);checks++}
+const manifest=await (await fetch(base+'/manifest.webmanifest')).json();assert.equal(manifest.display,'standalone');checks++;
+console.log(`PASS: ${checks} integration assertions (roles, privacy, documents, review, recurring tasks, reminder deduplication and PWA assets).`);

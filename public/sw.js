@@ -1,0 +1,6 @@
+const CACHE='activitytab-shell-v1';
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/offline.html','/icon-192.png'])))});
+self.addEventListener('activate',e=>e.waitUntil(Promise.all([self.clients.claim(),caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))])));
+self.addEventListener('fetch',e=>{if(e.request.mode==='navigate')e.respondWith(fetch(e.request).catch(()=>caches.match('/offline.html')))});
+self.addEventListener('push',e=>{let data={title:'ActivityTAB',body:'You have a task update.',url:'/'};try{Object.assign(data,e.data.json())}catch{}e.waitUntil(self.registration.showNotification(data.title,{body:data.body,icon:'/icon-192.png',badge:'/icon-192.png',tag:data.tag,data:{url:data.url}}))});
+self.addEventListener('notificationclick',e=>{e.notification.close();const u=new URL(e.notification.data?.url||'/',self.location.origin);if(u.origin!==self.location.origin)return;e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(async list=>{for(const c of list){if(new URL(c.url).origin===u.origin){await c.navigate(u.href);return c.focus()}}return clients.openWindow(u.href)}))});

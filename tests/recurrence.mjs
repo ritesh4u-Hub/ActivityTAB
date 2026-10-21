@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {nextDue} from '../lib/recurrence.ts';
+assert.equal(nextDue('2026-10-21T11:30:00.000Z','daily'),'2026-10-22T11:30:00.000Z');
+assert.equal(nextDue('2026-10-21T11:30:00.000Z','weekly'),'2026-10-28T11:30:00.000Z');
+assert.equal(nextDue('2026-01-31T11:30:00.000Z','monthly',31),'2026-02-28T11:30:00.000Z');
+assert.equal(nextDue('2026-02-28T11:30:00.000Z','monthly',31),'2026-03-31T11:30:00.000Z');
+assert.equal(nextDue('2028-01-31T11:30:00.000Z','monthly',31),'2028-02-29T11:30:00.000Z');
+assert.equal(nextDue('2026-01-30T19:30:00.000Z','monthly',31),'2026-02-27T19:30:00.000Z');
+assert.throws(()=>nextDue('2026-10-21T11:30:00.000Z','yearly'));
+console.log('PASS: 7 recurrence assertions (daily, weekly, month-end, leap year and IST midnight).');
