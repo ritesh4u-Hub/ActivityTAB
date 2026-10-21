@@ -5,7 +5,13 @@ const b64=(a:ArrayBuffer|Uint8Array)=>btoa(String.fromCharCode(...new Uint8Array
 const join=(...a:Uint8Array[])=>{const out=new Uint8Array(a.reduce((n,x)=>n+x.length,0));let o=0;for(const x of a){out.set(x,o);o+=x.length}return out};
 async function hkdf(key:Uint8Array,salt:Uint8Array,info:Uint8Array,length:number){const k=await crypto.subtle.importKey('raw',key as any,'HKDF',false,['deriveBits']);return new Uint8Array(await crypto.subtle.deriveBits({name:'HKDF',hash:'SHA-256',salt:salt as any,info:info as any},k,length*8))}
 export async function generateVapid(){const k=await crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign','verify']);return {publicKey:b64(await crypto.subtle.exportKey('raw',k.publicKey)),privateKey:await crypto.subtle.exportKey('jwk',k.privateKey)}}
+// Keep lock-screen previews small; full remarks remain in the authenticated task.
+export function compactPushPayload(payload:any){
+ const preview=(value:any,max:number)=>{const chars=Array.from(String(value??''));return chars.length>max?chars.slice(0,max).join('')+'…':chars.join('')};
+ return {...payload,title:preview(payload.title,120),body:preview(payload.body,240)};
+}
 export async function sendPush(sub:any,payload:any,vapid:any){
+ payload=compactPushPayload(payload);
  const url=new URL(sub.endpoint);if(url.protocol!=='https:'||!['fcm.googleapis.com','updates.push.services.mozilla.com','web.push.apple.com'].some(h=>url.hostname===h||url.hostname.endsWith('.'+h)))throw Error('Unsupported push service');
  const expiry=Math.floor(Date.now()/1000)+43200;const h=b64(enc.encode(JSON.stringify({typ:'JWT',alg:'ES256'})));const p=b64(enc.encode(JSON.stringify({aud:url.origin,exp:expiry,sub:'https://activitytab-taskflow.riteshsaraogi.chatgpt.site'})));
  const signing=await crypto.subtle.importKey('jwk',vapid.privateKey,{name:'ECDSA',namedCurve:'P-256'},false,['sign']);const sig=await crypto.subtle.sign({name:'ECDSA',hash:'SHA-256'},signing,enc.encode(h+'.'+p));
