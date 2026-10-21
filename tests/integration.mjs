@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 const base=process.env.TEST_BASE||'http://127.0.0.1:8787';
 let checks=0;const stamp=Date.now();const admin='seedy@sites.test';
-async function call(path,method='GET',body,email=admin,expected=200){const r=await fetch(base+'/api/'+path,{method,headers:{...(email?{'oai-authenticated-user-id':'test-user-'+email,'oai-authenticated-user-email':email}:{}),...(body&&! (body instanceof FormData)?{'Content-Type':'application/json'}:{})},body:body?body instanceof FormData?body:JSON.stringify(body):undefined});const b=await r.json();assert.equal(r.status,expected,`${method} ${path}: ${JSON.stringify(b)}`);checks++;return b}
+async function call(path,method='GET',body,email=admin,expected=200){const r=await fetch(base+'/api/'+path,{method,headers:{Connection:'close',...(email?{'oai-authenticated-user-id':'test-user-'+email,'oai-authenticated-user-email':email}:{}),...(body&&! (body instanceof FormData)?{'Content-Type':'application/json'}:{})},body:body?body instanceof FormData?body:JSON.stringify(body):undefined});const b=await r.json();assert.equal(r.status,expected,`${method} ${path}: ${JSON.stringify(b)}`);checks++;return b}
 const state=await call('state');await call('state','GET',undefined,null,401);
 const alice=`alice${stamp}@example.test`,bob=`bob${stamp}@example.test`;
 for(const [name,email] of [['Alice Sharma',alice],['Bob Singh',bob]])await call('members','POST',{name,email,department:'Operations',role:'executive'});
