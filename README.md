@@ -1,5 +1,18 @@
 # ActivityTAB
 
+## Current Windows deployment
+
+The live deployment is https://mis-sweetdreams.in/ActivityTAB/ on Windows IIS, with the Node runtime in `windows/`. Build with `node windows/build.mjs`. Windows uses local email/password authentication, private SQLite/uploads, a minute scheduler and a separate push retry worker. The Sites sections below describe the original hosting variant.
+
+The Windows release includes private direct messages and fixed-membership team groups under Chat, plus discussions opened from Task details. Task discussions follow existing task permissions; managers can join discussions for tasks they can access. General chats have no administrator override: only participants can read their messages and files. Groups do not yet support changing participants, message edits/deletion, mentions or voice/video calls.
+
+Chat uses visible-page polling (messages every five seconds; conversation list every fifteen seconds), cursor-based message pages of 50, 5,000-character messages, a per-sender throttle and idempotent send identifiers. PDF, JPEG, PNG, Excel and CSV attachments are limited to 10 MB and downloaded through authenticated requests. Muting a conversation stops its push alerts while retaining unread messages. Notification taps open the specific chat. Push content identifies the conversation without exposing message text on the lock screen. Phone delivery still depends on permission, connectivity and OS settings.
+
+Schema migrations are applied transactionally on Windows startup. The update script stops the process and preserves the old runtime, database/WAL and uploads in private storage before migration. Daily online database backups include both task documents and chat attachments; only verified completed backups count toward retention of 14. Off-server backups and external integrations are not configured.
+
+Windows checks: `node windows/test.mjs` (disposable integration database), `node windows/notification-test.mjs` (isolated provider stub, no real pushes). Build before running these checks.
+
+
 An installable task management web application for an internal team of about 100 employees.
 
 ## Included
@@ -8,7 +21,7 @@ An installable task management web application for an internal team of about 100
 - Task assignments, deadlines, priorities, acknowledgements, and work status.
 - Separate daily, weekly, and monthly occurrences. Month-end dates preserve the original day, with shorter months clamped. Daily tasks can skip weekends.
 - Private Excel, CSV, PDF, and JPEG submissions (20 MB per file). PDFs and JPEGs open for review; spreadsheets download for review.
-- Submit, approve, and return for correction with a new deadline. Required-document tasks returned for correction require a new document.
+- Submit, approve, and return for correction with a new deadline. Returned tasks can be resubmitted with remarks using an existing attachment; a revised document is optional.
 - In-app notifications, encrypted standards-based Web Push, VAPID authentication, delivery logs, expired subscription cleanup, and bounded retries.
 - Configurable working hours, pre-deadline reminders, overdue repeats, and escalation to the assigning manager. All workday times use Asia/Kolkata.
 - PWA manifest, Android/maskable/iPhone icons, service worker, offline fallback, install instructions, and test notifications.

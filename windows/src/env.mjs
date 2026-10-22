@@ -1,10 +1,10 @@
 import {DatabaseSync} from 'node:sqlite';
 import {mkdirSync,existsSync,createReadStream} from 'node:fs';
-import {writeFile} from 'node:fs/promises';
+import {writeFile,rm} from 'node:fs/promises';
 import {Readable} from 'node:stream';
 import {join,dirname} from 'node:path';
 export const dataDir=process.env.ACTIVITYTAB_DATA || join(dirname(process.argv[1]),'data');
 mkdirSync(join(dataDir,'uploads'),{recursive:true});
 export const sqlite=new DatabaseSync(join(dataDir,'activitytab.sqlite'));
 sqlite.exec('PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
-export const env={DB:{prepare(sql){return {bind(...args){const st=sqlite.prepare(sql);return {async all(){return {results:st.all(...args)}},async first(){return st.get(...args)||null},async run(){const r=st.run(...args);return {meta:{changes:Number(r.changes)}}}}}}}},BUCKET:{async put(id,bytes){if(!/^[\w-]+$/.test(id))throw Error('Invalid file id');await writeFile(join(dataDir,'uploads',id),Buffer.from(bytes))},async get(id){if(!/^[\w-]+$/.test(id))return null;const p=join(dataDir,'uploads',id);return existsSync(p)?{body:Readable.toWeb(createReadStream(p))}:null}}};
+export const env={DB:{async batch(statements){sqlite.exec('BEGIN IMMEDIATE');try{const result=statements.map(s=>{const r=sqlite.prepare(s.sql).run(...s.args);return {meta:{changes:Number(r.changes)}}});sqlite.exec('COMMIT');return result}catch(error){sqlite.exec('ROLLBACK');throw error}},prepare(sql){return {bind(...args){const st=sqlite.prepare(sql);return {sql,args,async all(){return {results:st.all(...args)}},async first(){return st.get(...args)||null},async run(){const r=st.run(...args);return {meta:{changes:Number(r.changes)}}}}}}}},BUCKET:{async delete(id){if(!/^[\w-]+$/.test(id))throw Error('Invalid file id');await rm(join(dataDir,'uploads',id),{force:true})},async put(id,bytes){if(!/^[\w-]+$/.test(id))throw Error('Invalid file id');await writeFile(join(dataDir,'uploads',id),Buffer.from(bytes))},async get(id){if(!/^[\w-]+$/.test(id))return null;const p=join(dataDir,'uploads',id);return existsSync(p)?{body:Readable.toWeb(createReadStream(p))}:null}}};

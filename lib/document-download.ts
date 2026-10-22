@@ -3,7 +3,7 @@
 export async function downloadDocument(url:string,name:string){
  const response=await fetch(url,{credentials:'same-origin',cache:'no-store'});
  if(!response.ok){
-  const body=await response.json().catch(()=>null);
+  const body:any=await response.json().catch(()=>null);
   throw new Error(body?.error||'Unable to download this document. Please try again.');
  }
  const blob=await response.blob(),objectUrl=URL.createObjectURL(blob),link=document.createElement('a');
