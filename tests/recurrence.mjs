@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {nextDue} from '../lib/recurrence.ts';
+import {nextDue,nextScheduledDue,isWorkingDay} from '../lib/recurrence.ts';
 assert.equal(nextDue('2026-10-21T11:30:00.000Z','daily'),'2026-10-22T11:30:00.000Z');
 assert.equal(nextDue('2026-10-21T11:30:00.000Z','weekly'),'2026-10-28T11:30:00.000Z');
 assert.equal(nextDue('2026-01-31T11:30:00.000Z','monthly',31),'2026-02-28T11:30:00.000Z');
@@ -8,3 +8,15 @@ assert.equal(nextDue('2028-01-31T11:30:00.000Z','monthly',31),'2028-02-29T11:30:
 assert.equal(nextDue('2026-01-30T19:30:00.000Z','monthly',31),'2026-02-27T19:30:00.000Z');
 assert.throws(()=>nextDue('2026-10-21T11:30:00.000Z','yearly'));
 console.log('PASS: 7 recurrence assertions (daily, weekly, month-end, leap year and IST midnight).');
+
+const monFri={weekdaysOnly:true,includeSaturday:false,holidays:[]},monSat={...monFri,includeSaturday:true};
+assert.equal(nextScheduledDue('2026-10-23T05:15:00Z','daily',undefined,monSat),'2026-10-24T05:15:00.000Z');
+assert.equal(nextScheduledDue('2026-10-23T05:15:00Z','daily',undefined,monFri),'2026-10-26T05:15:00.000Z');
+assert.equal(nextScheduledDue('2026-10-24T05:15:00Z','daily',undefined,monSat),'2026-10-26T05:15:00.000Z');
+assert.equal(nextScheduledDue('2026-10-23T05:15:00Z','daily',undefined,{...monSat,holidays:[{date:'2026-10-24',name:'Holiday'}]}),'2026-10-26T05:15:00.000Z');
+assert.equal(nextScheduledDue('2026-10-23T05:15:00Z','daily',undefined,{...monFri,holidays:[{date:'2026-10-26',name:'Holiday'}]}),'2026-10-27T05:15:00.000Z');
+assert.equal(isWorkingDay('2026-10-23T20:00:00Z',monSat),true);
+assert.equal(isWorkingDay('2026-10-23T20:00:00Z',monFri),false);
+assert.equal(isWorkingDay('2026-10-25T05:15:00Z',monSat),false);
+assert.equal(isWorkingDay('2026-10-26T05:15:00Z',{weekdaysOnly:false,holidays:[{date:'2026-10-26',name:'Holiday'}]}),false);
+console.log('PASS: 9 working-calendar assertions (Saturday inclusion, Sunday exclusion, holiday skipping and IST date boundaries).');

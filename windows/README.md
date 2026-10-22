@@ -71,3 +71,7 @@ Uploads are limited to 20 MB per document. Two uploads are processed concurrentl
 A disposable local load test on macOS with 20,000 tasks, 5,000 document records, and four simultaneous 20 MB uploads returned metadata in 121 ms; health requests during uploads had a 4 ms p95 and 54 ms maximum in that run. These numbers measure the local application process, not the Windows server or a phone network. Run the included performance script after changes rather than assuming identical latency on other hardware.
 
 Returned tasks can reuse an existing supporting document when resubmitting with remarks. Initial required-document submissions still require an attachment. Resubmissions have a distinct reviewer notification; work-start and document-added events notify the assigning manager. New assignment previews include the assigner, IST deadline and priority. Push previews are shortened to fit payload limits while full remarks remain in task history.
+
+## Working calendar
+
+Settings → Reminder rules includes a working-day schedule, an optional Saturday working day, and up to 100 named public-holiday dates. Administrators add/remove dates then save the calendar. Daily recurrence and timed reminders use IST dates and skip excluded days and public holidays. Existing deadlines and weekly/monthly recurrence are not moved automatically; immediate task-update push alerts remain immediate. Unsaved calendar edits survive background refreshes until saved.
