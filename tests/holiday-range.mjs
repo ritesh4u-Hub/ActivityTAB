@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {addHolidayRange,holidayRanges} from '../lib/holiday-range.ts';
+import {isWorkingDay} from '../lib/recurrence.ts';
+let holidays=addHolidayRange([], '2026-11-08','2026-11-10',' Diwali ');
+assert.deepEqual(holidays.map(h=>h.date),['2026-11-08','2026-11-09','2026-11-10']);assert.ok(holidays.every(h=>h.name==='Diwali'));
+assert.deepEqual(holidayRanges(holidays),[{from:'2026-11-08',to:'2026-11-10',name:'Diwali'}]);
+for(const date of ['2026-11-08','2026-11-09','2026-11-10'])assert.equal(isWorkingDay(new Date(date+'T06:00:00Z'),{weekdaysOnly:false,holidays}),false);
+assert.equal(isWorkingDay(new Date('2026-11-11T06:00:00Z'),{weekdaysOnly:false,holidays}),true);
+assert.deepEqual(addHolidayRange([],'2026-12-25','2026-12-25','Christmas'),[{date:'2026-12-25',name:'Christmas'}]);
+assert.deepEqual(addHolidayRange([],'2028-02-28','2028-03-01','Break').map(h=>h.date),['2028-02-28','2028-02-29','2028-03-01']);
+assert.deepEqual(addHolidayRange([],'2026-12-31','2027-01-01','Break').map(h=>h.date),['2026-12-31','2027-01-01']);
+for(const [from,to,name] of [['2026-02-30','2026-03-02','Invalid'],['','2026-01-01','Missing'],['2026-11-10','2026-11-08','Backwards'],['2026-11-11','2026-11-12',''],['2026-01-01','2026-12-31','Too long']])assert.throws(()=>addHolidayRange([],from,to,name));
+assert.throws(()=>addHolidayRange(holidays,'2026-11-10','2026-11-12','Overlap'),/already exists/);assert.equal(holidays.length,3);
+assert.equal(holidayRanges([...holidays,{date:'2026-11-11',name:'Other'}]).length,2);
+assert.deepEqual(holidayRanges([{date:'2026-11-10',name:'Diwali'},{date:'2026-11-08',name:'Diwali'}]).map(h=>h.from),['2026-11-08','2026-11-10']);
+console.log('PASS: inclusive holiday ranges, single day, leap day, year boundary, invalid/reversed dates, overlaps, day limit, grouping and recurrence exclusion.');
