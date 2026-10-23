@@ -17,7 +17,7 @@ await esbuild.build({entryPoints:[root+'/windows/src/route.ts'],bundle:true,plat
 await esbuild.build({entryPoints:[root+'/lib/service.ts'],bundle:true,platform:'node',format:'esm',target:'node24',outfile:out+'/service.mjs',plugins:[backendPlugin]});
 // SQLite WAL safely supports both connections; all scheduler and API writes use SQL atomic claims.
 let app=await readFile(root+'/app/page.tsx','utf8');
-app=app.replace("from './chat'","from '../../app/chat'");
+app=app.replace("from './chat'","from '../../app/chat'").replace("from './task-share'","from '../../app/task-share'");
 app=app.replace("from '../lib/document-download'","from '../../lib/document-download'");
 app=app.replaceAll("'/api/","'/ActivityTAB/api/").replaceAll('href="/"','href="/ActivityTAB/"').replaceAll("'/sw.js'","'/ActivityTAB/sw.js'").replace("{scope:'/'}","{scope:'/ActivityTAB/'}");
 app=app.replaceAll('/signout-with-chatgpt?return_to=/','/ActivityTAB/signout').replaceAll('/signin-with-chatgpt?return_to=/%3Fworkspace%3D1','/ActivityTAB/signin').replaceAll('/signin-with-chatgpt?return_to=/','/ActivityTAB/signin');
