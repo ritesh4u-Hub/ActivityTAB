@@ -3,7 +3,7 @@ try{
  $target='C:\inetpub\wwwroot\CFOProject\ActivityTAB';$private='C:\ProgramData\ActivityTAB'
  Write-Host 'Copying tested update...'
  $zip=Join-Path $private 'packages\ActivityTAB-Update.zip';Copy-Item -LiteralPath '\\tsclient\server-transfer\ActivityTAB-Windows-update.zip' -Destination $zip -Force
- if((Get-FileHash $zip -Algorithm SHA256).Hash -ne '190f6ed988f7f955c5141ba9ce2e0603614434972cf0c5db4278d695a83ea432'){throw 'Update package checksum failed'}
+ if((Get-FileHash $zip -Algorithm SHA256).Hash -ne 'dea3b320ed4bd2c5f77b7b6ecca047ee0b9a033abfe3c4cbc9c1884e807ddfd7'){throw 'Update package checksum failed'}
  $backup=Join-Path $private ('backups\task-escalation-'+(Get-Date -Format yyyyMMdd-HHmmss));New-Item -ItemType Directory -Force -Path $backup|Out-Null;Copy-Item -LiteralPath $target -Destination $backup -Recurse
  Stop-ScheduledTask -TaskName 'ActivityTAB Server';Start-Sleep -Seconds 1
  Get-CimInstance Win32_Process|Where-Object{$_.Name -eq 'node.exe' -and $_.CommandLine -like '*ActivityTAB*server.mjs*'}|ForEach-Object{Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue}
