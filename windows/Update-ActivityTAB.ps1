@@ -3,8 +3,8 @@ try{
  $target='C:\inetpub\wwwroot\CFOProject\ActivityTAB';$private='C:\ProgramData\ActivityTAB'
  Write-Host 'Copying tested update...'
  $zip=Join-Path $private 'packages\ActivityTAB-Update.zip';Copy-Item -LiteralPath '\\tsclient\server-transfer\ActivityTAB-Windows-update.zip' -Destination $zip -Force
- if((Get-FileHash $zip -Algorithm SHA256).Hash -ne '33faee882bd50dcfaa82e0e960a457a3cf0066cce16e721bb4a0d5f2edca5638'){throw 'Update package checksum failed'}
- $backup=Join-Path $private ('backups\task-privacy-sound-'+(Get-Date -Format yyyyMMdd-HHmmss));New-Item -ItemType Directory -Force -Path $backup|Out-Null;Copy-Item -LiteralPath $target -Destination $backup -Recurse
+ if((Get-FileHash $zip -Algorithm SHA256).Hash -ne '1741ab75dc8c0399adb99ca53cf7a0debb3db38f26a6f0745d908450c28e61b2'){throw 'Update package checksum failed'}
+ $backup=Join-Path $private ('backups\manager-onboarding-'+(Get-Date -Format yyyyMMdd-HHmmss));New-Item -ItemType Directory -Force -Path $backup|Out-Null;Copy-Item -LiteralPath $target -Destination $backup -Recurse
  Stop-ScheduledTask -TaskName 'ActivityTAB Server';Start-Sleep -Seconds 1
  Get-CimInstance Win32_Process|Where-Object{$_.Name -eq 'node.exe' -and $_.CommandLine -like '*ActivityTAB*server.mjs*'}|ForEach-Object{Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue}
  # With the app stopped, preserve database, WAL and uploaded files before schema migration.

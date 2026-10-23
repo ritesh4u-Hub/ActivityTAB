@@ -75,3 +75,5 @@ Returned tasks can reuse an existing supporting document when resubmitting with 
 ## Working calendar
 
 Settings → Reminder rules includes a working-day schedule, an optional Saturday working day, and up to 100 named public-holiday dates. Administrators add/remove dates then save the calendar. Daily recurrence and timed reminders use IST dates and skip excluded days and public holidays. Existing deadlines and weekly/monthly recurrence are not moved automatically; immediate task-update push alerts remain immediate. Unsaved calendar edits survive background refreshes until saved.
+
+Managers can add executives from Team and create their initial account setup links from Manage sign-in access. Managers cannot add managers/administrators, edit or deactivate members, or reset established accounts. Only administrators can reset passwords.
