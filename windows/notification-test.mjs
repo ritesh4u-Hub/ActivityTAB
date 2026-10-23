@@ -36,5 +36,16 @@ try{
  run("INSERT INTO members(id,email,name,role,department) VALUES('c','c@test.invalid','Unrelated admin','admin','Test')");run("INSERT INTO subscriptions(id,recipient,data,created) VALUES('c1','c',?,?)",JSON.stringify({endpoint:'c1'}),now());
  await service.notify('c','task','Private task','Must not leak','denied-task','c1');assert.equal(q("SELECT id FROM notifications WHERE id='denied-task'"),undefined);
  run("INSERT INTO notifications(id,recipient,task,title,body,created) VALUES('legacy-leak','c','task','Private','Hidden',?)",now());run("INSERT INTO deliveries(id,subscription,notification,status,created) VALUES('legacy-delivery','c1','legacy-leak','pending',?)",now());const privacyCalls=t.calls.length;await service.flushPush();assert.equal(t.calls.length,privacyCalls);assert.equal(q("SELECT status FROM deliveries WHERE id='legacy-delivery'").status,'superseded');
+ // Automatic escalation uses the same outbox, stops at submission and resets for recurrence.
+ run("UPDATE tasks SET status='pending',frequency='daily',next_created=0,escalation_manager='c',escalation_hours=1,escalated_at=NULL WHERE id='task'");
+ await service.maintenance({flush:false});assert.ok(q("SELECT escalated_at FROM tasks WHERE id='task'").escalated_at);
+ const escalation=q("SELECT * FROM notifications WHERE recipient='c' AND title LIKE 'Overdue escalation:%'");assert.ok(escalation);assert.ok(q('SELECT id FROM deliveries WHERE notification=?',escalation.id));
+ await service.flushPush();const escalationPush=t.calls.find(c=>c.payload.tag===escalation.id);assert.equal(escalationPush.payload.url,'/?task=task');assert.equal(escalationPush.sub.endpoint,'c1');
+ const generated=q("SELECT * FROM tasks WHERE parent='task'");assert.equal(generated.escalation_manager,'c');assert.equal(generated.escalation_hours,1);assert.equal(generated.escalated_at,null);
+ const count=q("SELECT COUNT(*) n FROM notifications WHERE title LIKE 'Overdue escalation:%'").n;await service.maintenance({flush:false});assert.equal(q("SELECT COUNT(*) n FROM notifications WHERE title LIKE 'Overdue escalation:%'").n,count);
+ run("UPDATE tasks SET escalated_at=NULL,status='submitted' WHERE id='task'");await service.maintenance({flush:false});assert.equal(q("SELECT COUNT(*) n FROM notifications WHERE title LIKE 'Overdue escalation:%'").n,count);
+ // An escalation queued just before completion must be superseded at delivery time.
+ run("UPDATE tasks SET status='pending',escalated_at=NULL WHERE id='task'");await service.escalateTask(q("SELECT * FROM tasks WHERE id='task'"),'Test assigner','Please resolve',true);
+ const queued=q("SELECT id FROM notifications WHERE body='Please resolve'");run("UPDATE tasks SET status='completed' WHERE id='task'");await service.flushPush();assert.equal(q('SELECT status FROM deliveries WHERE notification=?',queued.id).status,'superseded');
  assert.ok(retryDelay(1,'120')>=120000);console.log('PASS: isolated notification tests cover current-device targeting, account separation, stale reminders, review cycles, bounded concurrency, Retry-After/backoff, permanent failures and chat deep links/read/mute suppression. No external push requests made.');
 }finally{db.close();delete globalThis.__testEnv;delete globalThis.__pushTest;rmSync(dir,{recursive:true,force:true})}
